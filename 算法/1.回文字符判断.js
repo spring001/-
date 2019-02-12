@@ -9,8 +9,9 @@ const algoCasts = (str) => {
   }
 
   const isAlphanumeric = (c) => {
+    const reg = /[a-z]|[A-Z]|[0-9]/
     const _c = c.toLowerCase();
-    return (_c >= 'a' && _c <= 'z') || (_c >= 0 && c <= 9);
+    return reg.text(_c);
   }
 
   const isEqualIgnoreCase = (a, b) => {
