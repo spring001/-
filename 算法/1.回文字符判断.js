@@ -28,3 +28,23 @@ const algoCasts = (str) => {
   }
   return true;
 }
+
+
+const sum2 = (...args) => {
+  let res = [...args].reduce((a, b) => a + b) || 0;
+  const fn = (...params) => {
+    if (params.length > 0) {
+      return sum2(params.reduce((a, b) => a + b, res));
+    } else {
+      return res;
+    }
+  }
+  // fn.valueOf = () => {
+  //   return res;
+  // }
+  // fn.toString = () => {
+  //   return res + '';
+  // }
+  return fn;
+}
+
