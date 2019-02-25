@@ -71,14 +71,14 @@ const throttle2 = (func, wait) => {
   return (...args) => {
     let cur = Date.now();
     let context = this;
-    if(timer) clearTimeout(timer);
-    if(cur - pre > wait){
+    if (timer) clearTimeout(timer);
+    if (cur - pre > wait) {
       fun.apply(this, args);
       pre = cur;
-    }else{
+    } else {
       timer = setTimeout(() => {
         fun.apply(this, args);
-      },wait);
+      }, wait);
     }
   }
 }

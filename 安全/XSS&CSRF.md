@@ -10,8 +10,9 @@ XSS 通过修改 HTML 节点或者执行 JS 代码来攻击网站。
 3.基于Dom
 
 防御
-1.对一些关键字和特殊字符进行过滤或 URL、HTML 编码，"<>?"或"script，javascript"；
-2.httpOnly js脚本将无法读取到 cookie 信息。
+1 .输入过滤：对一些关键字和特殊字符进行过滤或 URL、HTML 编码，"<>?"或"script，javascript"；
+2. httpOnly js脚本将无法读取到 cookie 信息。
+3. 白名单
 
 ####CSRF 跨站请求伪造
 攻击者盗用了你的身份，以你的名义发送恶意请求 
