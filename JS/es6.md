@@ -164,3 +164,264 @@ Number.isInteger()用来判断一个数值是否为整数。
 指定了默认值以后，函数的length属性，将返回没有指定默认值的参数个数
 5. 作用域  
 一旦设置了参数的默认值，函数进行声明初始化时，参数会形成一个单独的作用域（context）。等到初始化结束，这个作用域就会消失。
+
+6. rest 参数
+形式为...变量名，用于获取函数的多余参数
+7. 箭头函数 => 
+ * 函数体内的this对象，就是定义时所在的对象，而不是使用时所在的对象
+ * 不可以当作构造函数，也就是说，不可以使用new命令，否则会抛出一个错误。
+ * 不可以使用arguments对象，该对象在函数体内不存在。如果要用，可以用 rest 参数代替。
+ * 不可以使用yield命令，因此箭头函数不能用作 Generator 函数。
+
+### 数组
+1. 扩展运算符
+* 扩展运算符内部调用的是数据结构的 Iterator 接口，因此只要具有 Iterator 接口的对象，都可以使用扩展运算符，比如 Map 结构。
+Generator 函数运行后，返回一个遍历器对象，因此也可以使用扩展运算符。
+```
+const go = function*(){
+  yield 1;
+  yield 2;
+  yield 3;
+};
+
+[...go()] // [1, 2, 3]
+
+```
+上面代码中，变量go是一个 Generator 函数，执行后返回的是一个遍历器对象，对这个遍历器对象执行扩展运算符，就会将内部遍历得到的值，转为一个数组。
+
+2. Array.from()
+* Array.from方法用于将两类对象转为真正的数组：类似数组的对象（array-like object）和可遍历（iterable）的对象（包括 ES6 新增的数据结构 Set 和 Map）
+```
+let arrayLike = {
+    '0': 'a',
+    '1': 'b',
+    '2': 'c',
+    length: 3
+};
+
+// ES5的写法
+var arr1 = [].slice.call(arrayLike); // ['a', 'b', 'c']
+
+// ES6的写法
+let arr2 = Array.from(arrayLike); // ['a', 'b', 'c']
+```
+**任何有length属性的对象，都可以通过Array.from方法转为数组，而此时扩展运算符就无法转换。**
+```
+Array.from({ length: 3 });
+// [ undefined, undefined, undefined ]
+```
+上面代码中，Array.from返回了一个具有三个成员的数组，每个位置的值都是undefined。扩展运算符转换不了这个对象。
+
+* Array.from还可以接受第二个参数，作用类似于数组的map方法，用来对每个元素进行处理，将处理后的值放入返回的数组。
+```
+Array.from(arrayLike, x => x * x);
+// 等同于
+Array.from(arrayLike).map(x => x * x);
+
+Array.from([1, 2, 3], (x) => x * x)
+// [1, 4, 9]
+```
+3. Array.of
+Array.of方法用于将一组值，转换为数组。
+```
+Array.of(3, 11, 8) // [3,11,8]
+Array.of(3) // [3]
+Array.of(3).length // 1
+```
+Array.of方法可以用下面的代码模拟实现。
+```
+function ArrayOf(){
+  return [].slice.call(arguments);
+}
+```
+4. find & findIndex
+```
+[1, 4, -5, 10].find((n) => n < 0)
+// -5
+
+[1, 5, 10, 15].find(function(value, index, arr) {
+  return value > 9;
+}) // 10
+
+[1, 5, 10, 15].findIndex(function(value, index, arr) {
+  return value > 9;
+}) // 2
+```
+这两个方法都可以接受第二个参数，用来绑定回调函数的this对象。
+```
+function f(v){
+  return v > this.age;
+}
+let person = {name: 'John', age: 20};
+[10, 12, 26, 15].find(f, person);    // 26
+```
+5. fill
+方法使用给定值，填充一个数组。
+```
+['a', 'b', 'c'].fill(7, 1, 2)
+// ['a', 7, 'c']
+```
+6. entries()，keys()和values()
+它们都返回一个遍历器对象，可以用for...of循环进行遍历
+```
+for (let index of ['a', 'b'].keys()) {
+  console.log(index);
+}
+// 0
+// 1
+
+for (let elem of ['a', 'b'].values()) {
+  console.log(elem);
+}
+// 'a'
+// 'b'
+
+for (let [index, elem] of ['a', 'b'].entries()) {
+  console.log(index, elem);
+}
+// 0 "a"
+// 1 "b"
+```
+7. includes
+**Map 和 Set 数据结构有一个has方法，需要注意与includes区分。**
+* Map 结构的has方法，是用来查找键名的，比如Map.prototype.has(key)、WeakMap.prototype.has(key)、Reflect.has(target, propertyKey)。
+* Set 结构的has方法，是用来查找值的，比如Set.prototype.has(value)、WeakSet.prototype.has(value)。
+
+### 对象
+1. 表达式作为属性名
+```
+let propKey = 'foo';
+
+let obj = {
+  [propKey]: true,
+  ['a' + 'bc']: 123
+};
+```
+2. name 方法
+函数的name属性，返回函数名。对象方法也是函数，因此也有name属性。
+3. 属性的可枚举性和遍历
+* 可枚举性
+对象的每个属性都有一个描述对象（Descriptor），用来控制该属性的行为。Object.getOwnPropertyDescriptor方法可以获取该属性的描述对象。
+```
+let obj = { foo: 123 };
+Object.getOwnPropertyDescriptor(obj, 'foo')
+//  {
+//    value: 123,
+//    writable: true,
+//    enumerable: true,
+//    configurable: true
+//  }
+```
+描述对象的enumerable属性，称为“可枚举性”，如果该属性为false，就表示某些操作会忽略当前属性。
+
+目前，有四个操作会忽略enumerable为false的属性。
+
+for...in循环：只遍历对象自身的和继承的可枚举的属性。
+Object.keys()：返回对象自身的所有可枚举的属性的键名。
+JSON.stringify()：只串行化对象自身的可枚举的属性。
+Object.assign()： 忽略enumerable为false的属性，只拷贝对象自身的可枚举的属性。
+4. 属性的遍历
+1）for...in
+for...in循环遍历对象自身的和继承的可枚举属性（不含 Symbol 属性）。
+
+2) Object.keys(obj)
+Object.keys返回一个数组，包括对象自身的（不含继承的）所有可枚举属性（不含 Symbol 属性）的键名。
+
+3）Object.getOwnPropertyNames(obj)
+Object.getOwnPropertyNames返回一个数组，包含对象自身的所有属性（不含 Symbol 属性，但是包括不可枚举属性）的键名。
+
+4) Reflect.ownKeys(obj)
+
+5. super 关键字
+super，指向当前对象的原型对象。
+
+6. 对象的扩展运算符
+
+7. Object.is
+和 === 基本一致 不同之处只有两个：一是+0不等于-0，二是NaN等于自身。
+```
++0 === -0 //true
+NaN === NaN // false
+
+Object.is(+0, -0) // false
+Object.is(NaN, NaN) // true
+```
+8. Object.assign
+
+Object.assign方法实行的是浅拷贝，而不是深拷贝。也就是说，如果源对象某个属性的值是对象，那么目标对象拷贝得到的是这个对象的引用。
+**用途**
+* 为对象添加属性
+```
+class Point {
+  constructor(x, y) {
+    Object.assign(this, {x, y});
+  }
+}
+```
+* 为对象添加方法
+* 浅拷贝
+只能拷贝实例属性
+以下能拷贝原型属性
+```
+const clone = source => {
+  const properType = Object.getPrototcypeOf(source);
+  return Object.assign(Object.create(properType),source);
+}
+```
+9. Object.getOwnPropertyDescriptor()
+返回某个对象属性的描述对象（descriptor）
+
+10. Object.setPrototypeOf()
+Object.setPrototypeOf方法的作用与__proto__相同，用来设置一个对象的prototype对象，返回参数对象本身
+
+11. Object.getPrototypeOf() 
+该方法与Object.setPrototypeOf方法配套，用于读取一个对象的原型对象。
+
+### Symbol
+**JavaScript 语言的第七种数据类型**
+```let s1 = Symbol('foo');//可以接受一个字符串作为参数，表示对 Symbol 实例的描述```
+
+Symbol 作为属性名，该属性不会出现在for...in、for...of循环中，也不会被Object.keys()、Object.getOwnPropertyNames()、JSON.stringify()返回。但是，它也不是私有属性，有一个Object.getOwnPropertySymbols方法，可以获取指定对象的所有 Symbol 属性名。
+
+由于以 Symbol 值作为名称的属性，不会被常规方法遍历得到。我们可以利用这个特性，为对象定义一些非私有的、但又希望只用于内部的方法。
+
+1. Symbol.for()，Symbol.keyFor() 
+有时，我们希望重新使用同一个 Symbol 值，Symbol.for方法可以做到这一点。它接受一个字符串作为参数，然后搜索有没有以该参数作为名称的 Symbol 值。如果有，就返回这个 Symbol 值，否则就新建并返回一个以该字符串为名称的 Symbol 值。
+```
+let s1 = Symbol.for('foo');
+let s2 = Symbol.for('foo');
+
+s1 === s2 // true
+```
+Symbol.for()与Symbol()这两种写法，都会生成新的 Symbol。它们的区别是，前者会被登记在全局环境中供搜索，后者不会。
+Symbol.keyFor方法返回一个已登记的 Symbol 类型值的key。
+```
+let s1 = Symbol.for("foo");
+Symbol.keyFor(s1) // "foo"
+
+let s2 = Symbol("foo");
+Symbol.keyFor(s2) // undefined
+```
+
+### Set 和 Map 数据结构
+1. Set
+* 它类似于数组，但是成员的值都是唯一的，没有重复的值。
+* Set函数可以接受一个数组（或者具有 iterable 接口的其他数据结构）作为参数，用来初始化。
+* 数组去重 [...new Set(array)]
+* 去除字符串里面的重复字 //[...new Set('ababbc')].join('')
+* Set 实例的属性和方法
+ 1) Set.prototype.constructor：构造函数，默认就是Set函数。
+ 2) Set.prototype.size：返回Set实例的成员总数。
+ 3) add(value)：添加某个值，返回 Set 结构本身。
+ 4) delete(value)：删除某个值，返回一个布尔值，表示删除是否成功。
+ 5) has(value)：返回一个布尔值，表示该值是否为Set的成员。
+ 6) clear()：清除所有成员，没有返回值。
+
+* 遍历操作
+ 1) keys()：返回键名的遍历器
+ 2) values()：返回键值的遍历器
+ 3) entries()：返回键值对的遍历器
+ 4) forEach()：使用回调函数遍历每个成员
+
+2. Map
+Object 结构提供了“字符串—值”的对应，Map 结构提供了“值—值”的对应，是一种更完善的 Hash 结构实现。
