@@ -425,3 +425,138 @@ Symbol.keyFor(s2) // undefined
 
 2. Map
 Object 结构提供了“字符串—值”的对应，Map 结构提供了“值—值”的对应，是一种更完善的 Hash 结构实现。
+
+
+### Reflect
+1.  将Object对象的一些明显属于语言内部的方法（比如Object.defineProperty），放到Reflect对象上。
+2. 修改某些Object方法的返回结果，让其变得更合理。
+Object.defineProperty(obj, name, desc)在无法定义属性时，会抛出一个错误，而Reflect.defineProperty(obj, name, desc)则会返回false。
+3. 让Object操作都变成函数行为。某些Object操作是命令式，比如name in obj和delete obj[name]，而Reflect.has(obj, name)和Reflect.deleteProperty(obj, name)让它们变成了函数行为。
+4. Reflect对象的方法与Proxy对象的方法一一对应，只要是Proxy对象的方法，就能在Reflect对象上找到对应的方法。这就让Proxy对象可以方便地调用对应的Reflect方法，完成默认行为，作为修改行为的基础。也就是说，不管Proxy怎么修改默认行为，你总可以在Reflect上获取默认行为。
+
+**静态方法**
+Reflect.apply(target, thisArg, args)
+Reflect.construct(target, args)
+Reflect.get(target, name, receiver)
+Reflect.set(target, name, value, receiver)
+Reflect.defineProperty(target, name, desc)
+Reflect.deleteProperty(target, name)
+Reflect.has(target, name)
+Reflect.ownKeys(target)
+Reflect.isExtensible(target)
+Reflect.preventExtensions(target)
+Reflect.getOwnPropertyDescriptor(target, name)
+Reflect.getPrototypeOf(target)
+Reflect.setPrototypeOf(target, prototype)
+
+* Reflect.get(target, name, receiver)
+Reflect.get方法查找并返回target对象的name属性，如果没有该属性，则返回undefined。如果name属性部署了读取函数（getter），则读取函数的this绑定receiver。
+```
+var myObject = {
+  foo: 1,
+  bar: 2,
+  get baz() {
+    return this.foo + this.bar;
+  },
+};
+
+var myReceiverObject = {
+  foo: 4,
+  bar: 4,
+};
+
+Reflect.get(myObject, 'baz', myReceiverObject) // 8
+```
+* Reflect.deleteProperty方法等同于delete obj[name]，用于删除对象的属性。
+* Reflect.construct(target, args) 
+Reflect.construct方法等同于new target(...args)，这提供了一种不使用new，来调用构造函数的方法。
+
+```
+function Greeting(name) {
+  this.name = name;
+}
+
+// new 的写法
+const instance = new Greeting('张三');
+
+// Reflect.construct 的写法
+const instance = Reflect.construct(Greeting, ['张三']);
+```
+* Reflect.getPrototypeOf(obj) 方法用于读取对象的__proto__属性
+* Reflect.apply(func, thisArg, args)
+Reflect.apply方法等同于Function.prototype.apply.call(func, thisArg, args)，用于绑定this对象后执行给定函数。
+* Reflect.defineProperty(target, propertyKey, attributes)
+* Reflect.isExtensible (target) 
+Reflect.isExtensible方法对应Object.isExtensible，返回一个布尔值，表示当前对象是否可扩展。如果参数不是对象，Object.isExtensible会返回false，因为非对象本来就是不可扩展的，而Reflect.isExtensible会报错。
+* Reflect.ownKeys (target)
+Reflect.ownKeys方法用于返回对象的所有属性，基本等同于Object.getOwnPropertyNames与Object.getOwnPropertySymbols之和。
+```
+var myObject = {
+  foo: 1,
+  bar: 2,
+  [Symbol.for('baz')]: 3,
+  [Symbol.for('bing')]: 4,
+};
+
+// 旧写法
+Object.getOwnPropertyNames(myObject)
+// ['foo', 'bar']
+
+Object.getOwnPropertySymbols(myObject)
+//[Symbol(baz), Symbol(bing)]
+
+// 新写法
+Reflect.ownKeys(myObject)
+// ['foo', 'bar', Symbol(baz), Symbol(bing)]
+```
+
+**实现观察者模式**
+```
+const queuedObservers = new Set();
+
+const observe = fn => queuedObservers.add(fn);
+const observable = obj => new Proxy(obj, {set});
+
+function set(target, key, value, receiver) {
+  const result = Reflect.set(target, key, value, receiver);
+  queuedObservers.forEach(observer => observer());
+  return result;
+}
+```
+### Proxy
+Proxy 用于修改某些操作的默认行为，属于元编程
+**Proxy 支持的拦截操作一览**
+get(target, propKey, receiver)：拦截对象属性的读取，比如proxy.foo和proxy['foo']。
+set(target, propKey, value, receiver)：拦截对象属性的设置，比如proxy.foo = v或proxy['foo'] = v，返回一个布尔值。
+has(target, propKey)：拦截propKey in proxy的操作，返回一个布尔值。
+deleteProperty(target, propKey)：拦截delete proxy[propKey]的操作，返回一个布尔值。
+ownKeys(target)：拦截Object.getOwnPropertyNames(proxy)、Object.getOwnPropertySymbols(proxy)、Object.keys(proxy)、for...in循环，返回一个数组。该方法返回目标对象所有自身的属性的属性名，而Object.keys()的返回结果仅包括目标对象自身的可遍历属性。
+getOwnPropertyDescriptor(target, propKey)：拦截Object.getOwnPropertyDescriptor(proxy, propKey)，返回属性的描述对象。
+defineProperty(target, propKey, propDesc)：拦截Object.defineProperty(proxy, propKey, propDesc）、Object.defineProperties(proxy, propDescs)，返回一个布尔值。
+preventExtensions(target)：拦截Object.preventExtensions(proxy)，返回一个布尔值。
+getPrototypeOf(target)：拦截Object.getPrototypeOf(proxy)，返回一个对象。
+isExtensible(target)：拦截Object.isExtensible(proxy)，返回一个布尔值。
+setPrototypeOf(target, proto)：拦截Object.setPrototypeOf(proxy, proto)，返回一个布尔值。如果目标对象是函数，那么还有两种额外操作可以拦截。
+apply(target, object, args)：拦截 Proxy 实例作为函数调用的操作，比如proxy(...args)、proxy.call(object, ...args)、proxy.apply(...)。
+construct(target, args)：拦截 Proxy 实例作为构造函数调用的操作，比如new proxy(...args)。
+
+### Promise
+
+* 对象的状态不受外界影响。Promise对象代表一个异步操作，有三种状态：pending（进行中）、fulfilled（已成功）和rejected（已失败）
+* 一旦状态改变，就不会再变，任何时候都可以得到这个结果。从pending变为fulfilled和从pending变为rejected
+
+```
+const promise = new Promise(function(resolve, reject) {
+  // ... some code
+
+  if (/* 异步操作成功 */){
+    resolve(value);
+  } else {
+    reject(error);
+  }
+});
+```
+* Promise 对象的错误具有“冒泡”性质，会一直向后传递，直到被捕获为止。也就是说，错误总是会被下一个catch语句捕获。
+* Promise 内部的错误不会影响到 Promise 外部的代码，通俗的说法就是“Promise 会吃掉错误”。
+* finally方法用于指定不管 Promise 对象最后状态如何，都会执行的操作。
+* Promise.all方法用于将多个 Promise 实例，包装成一个新的 Promise 实例
