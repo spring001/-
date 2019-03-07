@@ -560,3 +560,13 @@ const promise = new Promise(function(resolve, reject) {
 * Promise 内部的错误不会影响到 Promise 外部的代码，通俗的说法就是“Promise 会吃掉错误”。
 * finally方法用于指定不管 Promise 对象最后状态如何，都会执行的操作。
 * Promise.all方法用于将多个 Promise 实例，包装成一个新的 Promise 实例
+
+### Iterator 和 for...of 循环
+遍历器（Iterator）是一种接口，为各种不同的数据结构提供统一的访问机制。任何数据结构只要部署 Iterator 接口，就可以完成遍历操作（即依次处理该数据结构的所有成员）。
+* 一是为各种数据结构，提供一个统一的、简便的访问接口；
+* 二是使得数据结构的成员能够按某种次序排列；
+* 三是 ES6 创造了一种新的遍历命令for...of循环，Iterator 接口主要供for...of消费。
+
+一种数据结构只要部署了 Iterator 接口，我们就称这种数据结构是“可遍历的”（iterable）。
+默认的 Iterator 接口部署在数据结构的**Symbol.iterator**属性
+Symbol.iterator属性本身是一个函数，就是当前数据结构默认的遍历器生成函数。执行这个函数，就会返回一个遍历器。
